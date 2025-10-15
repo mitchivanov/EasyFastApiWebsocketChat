@@ -3,23 +3,226 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Вход в чат</title>
+    <title>Мои комнаты</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-100 flex flex-col items-center justify-center min-h-screen p-4">
-<h1 class="text-3xl font-bold mb-6">Добро пожаловать в чат</h1>
+<body class="bg-gray-100 min-h-screen p-4">
+<div class="max-w-4xl mx-auto">
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-3xl font-bold">Добро пожаловать, {{ user.first_name }} {{ user.last_name }}!</h1>
+        <a href="/logout" class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600">Выйти</a>
+    </div>
 
-<form action="/join_chat" method="post" class="bg-white p-6 rounded-lg shadow-md w-full max-w-md">
-    <label class="block text-gray-700">Введите ваше имя:</label>
-    <input type="text" name="username" required
-           class="w-full p-2 border border-gray-300 rounded-lg mt-2 focus:ring-2 focus:ring-blue-500">
+    {% if error %}
+    <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6" role="alert">
+        <span class="block sm:inline">{{ error }}</span>
+    </div>
+    {% endif %}
 
-    <label class="block text-gray-700 mt-4">Введите ID комнаты:</label>
-    <input type="number" name="room_id" required min="1"
-           class="w-full p-2 border border-gray-300 rounded-lg mt-2 focus:ring-2 focus:ring-blue-500">
-    <button type="submit" class="w-full bg-blue-500 text-white px-4 py-2 rounded-lg mt-4 hover:bg-blue-600">Войти в
-        чат
-    </button>
-</form>
+    <div class="bg-white p-6 rounded-lg shadow-md mb-6">
+        <h2 class="text-xl font-bold mb-4">Создать новую комнату</h2>
+        <form action="/create_room" method="post" class="flex gap-2">
+            <input type="text" name="room_name" required placeholder="Название комнаты"
+                   class="flex-1 p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+            <button type="submit" class="bg-green-500 text-white px-6 py-2 rounded-lg hover:bg-green-600">
+                Создать
+            </button>
+        </form>
+    </div>
+
+    <div class="bg-white p-6 rounded-lg shadow-md mb-6">
+        <h2 class="text-xl font-bold mb-4">Мои комнаты</h2>
+        {% if rooms.owned %}
+        <div class="space-y-2">
+            {% for room in rooms.owned %}
+            <div class="flex justify-between items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50">
+                <div>
+                    <p class="font-semibold">{{ room.name }}</p>
+                    <p class="text-sm text-gray-500">Создана: {{ room.created_at }}</p>
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="openManageModal({{ room.id }}, '{{ room.name }}')" 
+                            class="bg-purple-500 text-white px-4 py-2 rounded-lg hover:bg-purple-600">
+                        Управление
+                    </button>
+                    <form action="/join_room" method="post">
+                        <input type="hidden" name="room_id" value="{{ room.id }}">
+                        <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600">
+                            Войти
+                        </button>
+                    </form>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-gray-500">У вас пока нет комнат. Создайте первую!</p>
+        {% endif %}
+    </div>
+
+    {% if rooms.invited %}
+    <div class="bg-white p-6 rounded-lg shadow-md">
+        <h2 class="text-xl font-bold mb-4">Приглашенные комнаты</h2>
+        <div class="space-y-2">
+            {% for room in rooms.invited %}
+            <div class="flex justify-between items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50">
+                <div>
+                    <p class="font-semibold">{{ room.name }}</p>
+                    <p class="text-sm text-gray-500">Создана: {{ room.created_at }}</p>
+                </div>
+                <form action="/join_room" method="post">
+                    <input type="hidden" name="room_id" value="{{ room.id }}">
+                    <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600">
+                        Войти
+                    </button>
+                </form>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Modal for managing room members -->
+<div id="manageModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+    <div class="relative top-20 mx-auto p-5 border w-11/12 max-w-2xl shadow-lg rounded-md bg-white">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-2xl font-bold" id="modalRoomName">Управление комнатой</h3>
+            <button onclick="closeManageModal()" class="text-gray-600 hover:text-gray-800 text-2xl">&times;</button>
+        </div>
+
+        <!-- Invite User Section -->
+        <div class="mb-6">
+            <h4 class="text-lg font-semibold mb-2">Пригласить пользователя</h4>
+            <form id="inviteForm" class="flex gap-2">
+                <input type="text" id="inviteUsername" required placeholder="Имя пользователя"
+                       class="flex-1 p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                <button type="submit" class="bg-green-500 text-white px-6 py-2 rounded-lg hover:bg-green-600">
+                    Пригласить
+                </button>
+            </form>
+            <div id="inviteMessage" class="mt-2 text-sm"></div>
+        </div>
+
+        <!-- Members List Section -->
+        <div>
+            <h4 class="text-lg font-semibold mb-2">Участники комнаты</h4>
+            <div id="membersList" class="space-y-2">
+                <p class="text-gray-500">Загрузка...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentRoomId = null;
+
+function openManageModal(roomId, roomName) {
+    currentRoomId = roomId;
+    document.getElementById('modalRoomName').textContent = `Управление комнатой: ${roomName}`;
+    document.getElementById('manageModal').classList.remove('hidden');
+    loadMembers();
+}
+
+function closeManageModal() {
+    document.getElementById('manageModal').classList.add('hidden');
+    document.getElementById('inviteUsername').value = '';
+    document.getElementById('inviteMessage').textContent = '';
+    currentRoomId = null;
+}
+
+async function loadMembers() {
+    if (!currentRoomId) return;
+    
+    try {
+        const response = await fetch(`/room/${currentRoomId}/members`);
+        const data = await response.json();
+        
+        if (data.success) {
+            const membersList = document.getElementById('membersList');
+            if (data.members.length === 0) {
+                membersList.innerHTML = '<p class="text-gray-500">Нет участников</p>';
+            } else {
+                membersList.innerHTML = data.members.map(member => `
+                    <div class="flex justify-between items-center p-3 border border-gray-200 rounded-lg">
+                        <div>
+                            <p class="font-semibold">${member.username} ${member.is_owner ? '(Владелец)' : ''}</p>
+                            <p class="text-sm text-gray-500">${member.first_name} ${member.last_name}</p>
+                        </div>
+                        ${!member.is_owner ? `
+                            <button onclick="removeMember(${member.id})" 
+                                    class="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 text-sm">
+                                Удалить
+                            </button>
+                        ` : ''}
+                    </div>
+                `).join('');
+            }
+        }
+    } catch (error) {
+        console.error('Error loading members:', error);
+    }
+}
+
+document.getElementById('inviteForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const username = document.getElementById('inviteUsername').value;
+    const messageDiv = document.getElementById('inviteMessage');
+    
+    try {
+        const formData = new FormData();
+        formData.append('room_id', currentRoomId);
+        formData.append('username', username);
+        
+        const response = await fetch('/invite_user', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            messageDiv.className = 'mt-2 text-sm text-green-600';
+            messageDiv.textContent = data.message;
+            document.getElementById('inviteUsername').value = '';
+            loadMembers();
+        } else {
+            messageDiv.className = 'mt-2 text-sm text-red-600';
+            messageDiv.textContent = data.error;
+        }
+    } catch (error) {
+        messageDiv.className = 'mt-2 text-sm text-red-600';
+        messageDiv.textContent = 'Ошибка при отправке приглашения';
+    }
+});
+
+async function removeMember(memberId) {
+    if (!confirm('Вы уверены, что хотите удалить этого участника?')) {
+        return;
+    }
+    
+    try {
+        const formData = new FormData();
+        formData.append('room_id', currentRoomId);
+        formData.append('member_id', memberId);
+        
+        const response = await fetch('/remove_member', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            loadMembers();
+        } else {
+            alert(data.error);
+        }
+    } catch (error) {
+        alert('Ошибка при удалении участника');
+    }
+}
+</script>
 </body>
 </html>

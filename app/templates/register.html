@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Регистрация</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 flex flex-col items-center justify-center min-h-screen p-4">
+<h1 class="text-3xl font-bold mb-6">Регистрация</h1>
+
+{% if error %}
+<div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
+    <span class="block sm:inline">{{ error }}</span>
+</div>
+{% endif %}
+
+<form action="/register" method="post" class="bg-white p-6 rounded-lg shadow-md w-full max-w-md">
+    <label class="block text-gray-700">Имя:</label>
+    <input type="text" name="first_name" required
+           class="w-full p-2 border border-gray-300 rounded-lg mt-2 focus:ring-2 focus:ring-blue-500">
+
+    <label class="block text-gray-700 mt-4">Фамилия:</label>
+    <input type="text" name="last_name" required
+           class="w-full p-2 border border-gray-300 rounded-lg mt-2 focus:ring-2 focus:ring-blue-500">
+
+    <label class="block text-gray-700 mt-4">Username:</label>
+    <input type="text" name="username" required
+           class="w-full p-2 border border-gray-300 rounded-lg mt-2 focus:ring-2 focus:ring-blue-500">
+
+    <label class="block text-gray-700 mt-4">Пароль:</label>
+    <input type="password" name="password" required minlength="4"
+           class="w-full p-2 border border-gray-300 rounded-lg mt-2 focus:ring-2 focus:ring-blue-500">
+
+    <label class="block text-gray-700 mt-4">Подтвердите пароль:</label>
+    <input type="password" name="password_confirm" required minlength="4"
+           class="w-full p-2 border border-gray-300 rounded-lg mt-2 focus:ring-2 focus:ring-blue-500">
+
+    <button type="submit" class="w-full bg-blue-500 text-white px-4 py-2 rounded-lg mt-4 hover:bg-blue-600">
+        Зарегистрироваться
+    </button>
+</form>
+
+<p class="mt-4 text-gray-700">
+    Уже есть аккаунт? <a href="/login" class="text-blue-500 hover:underline">Войти</a>
+</p>
+</body>
+</html>
+
+
